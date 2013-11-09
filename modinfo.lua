@@ -1,5 +1,5 @@
 -- This information tells other players more about the mod
-name = "Achieve"
+name = "AManager"
 description = "To Do"
 author = "Nycidian"
 version = "0.1"

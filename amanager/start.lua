@@ -1,48 +1,37 @@
 local GetPlayer = GLOBAL.GetPlayer
 local SpawnPrefab = GLOBAL.SpawnPrefab
-local require = GLOBAL.require
 local GetWorld = GLOBAL.GetWorld
-local amanager = true
+local require = GLOBAL.require
+local ModNameLoc = ModName --GLOBAL:ModInfoname()
 
-function SimInit(inst)
+local table = require("table")
 
-	
+local installed = false
+local bestVersion = true
+local thisVersion = 0.2
 
-	for key,value in pairs(GetPlayer().components) do 
 
-
-		if key == "amanager" then
-			amanager = false
-		end
-
-	end
-
-	
-
-end
-
-AddSimPostInit(SimInit)
-
-if amanager then
-
+local function delayedstart()
 	-- need to add the component in here, otherwise OnSave doesn't work right
+	print("The "..ModNameLoc.." WAS instaled as AManager was either not installed or this is the highest version")
 	AddPrefabPostInit("world", function(inst)
-		    GLOBAL.assert( GLOBAL.GetPlayer() == nil )
-		    local player_prefab = GLOBAL.SaveGameIndex:GetSlotCharacter()
-		 
-		    -- Unfortunately, we can't add new postinits by now. So we have to do
-		    -- it the hard way...
-		 
-		    GLOBAL.TheSim:LoadPrefabs( {player_prefab} )
-		    local oldfn = GLOBAL.Prefabs[player_prefab].fn
-		    GLOBAL.Prefabs[player_prefab].fn = function()
-		        local inst = oldfn()
-		 
-		        -- Add components here.
-		        inst:AddComponent("amanager")
-		 
-		        return inst
-		    end
+	    GLOBAL.assert( GLOBAL.GetPlayer() == nil )
+	    local player_prefab = GLOBAL.SaveGameIndex:GetSlotCharacter()
+	 
+	    -- Unfortunately, we can't add new postinits by now. So we have to do
+	    -- it the hard way...
+	 
+	    GLOBAL.TheSim:LoadPrefabs( {player_prefab} )
+	    local oldfn = GLOBAL.Prefabs[player_prefab].fn
+	    GLOBAL.Prefabs[player_prefab].fn = function()
+	        local inst = oldfn()
+	 
+	        -- Add components here.
+	        inst:AddComponent("amanager")
+	        GetPlayer().components.amanager:Populate(GLOBAL)
+	 
+	        return inst
+	    end
 	end)
 	-------------------------------------------------
 	--inst:AddComponent("amanager")
@@ -232,5 +221,79 @@ if amanager then
 	--------------------------------------------------------------------------------------------------
 	-----------------------------------------------------------------
 	----------------------------- 
+	local Hounded = require("components/hounded")
+	--------------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------------
+	local Hounded_ReleaseHound_base = Hounded.ReleaseHound
+	function Hounded:ReleaseHound(dt)
+		local DidReleaseHound = Hounded_ReleaseHound_base(self, dt)
+		GetPlayer():PushEvent("playerhounded")
+		return DidReleaseHound
+	end
+	--------------------------------------------------------------------------------------------------
+	-----------------------------------------------------------------
+	----------------------------- 
+
 
 end
+
+local function delayedOne( inst )
+	print(ModNameLoc.." delayedOne")
+	local highestVersion = 0
+	for key,value in pairs(GetPlayer().AManager) do 
+		if highestVersion < value then
+			highestVersion = value
+		end
+		print(key,value, "highestVersion", highestVersion)
+	end 
+
+	
+
+	if GetPlayer().AManager[ModNameLoc] >= highestVersion then
+		bestVersion = true
+	else
+		bestVersion = false
+	end
+
+	print(ModNameLoc)
+	--print(GetPlayer().AManager[ModNameLoc] , highestVersion)
+	print("Mod highestVersion?",bestVersion)
+	GLOBAL.nolineprint("")
+	
+	for key,value in pairs(GetPlayer().components) do 
+		if key == "amanager" then
+
+			installed = true
+		end
+	end
+
+
+	if bestVersion then
+		inst:DoTaskInTime(1, function(inst, data) delayedstart() end)
+	end
+end
+
+
+function SimInit(inst)
+
+	local varAM = false
+
+	for key,value in pairs(GetPlayer()) do 
+		if string.find(key,"AManager") then
+			print(key,value)
+			varAM = true
+		end
+	end 
+
+	
+	if varAM then
+		GetPlayer().AManager[ModNameLoc]=thisVersion
+	else
+		GetPlayer().AManager ={}
+		GetPlayer().AManager[ModNameLoc]=thisVersion
+	end
+
+	inst:DoTaskInTime(1, function(inst, data) delayedOne(inst) end)
+end
+
+AddSimPostInit(SimInit)

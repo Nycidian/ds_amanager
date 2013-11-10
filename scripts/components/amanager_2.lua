@@ -6,7 +6,7 @@ local AManager = Class(function(self, inst)
     self.tick = {}
     ------------------------------------------------------------------------
     self.mods = {}
-    self.version = 0.1
+    self.version = 2
     ------------------------------------------------------------------------
     -- Multipliers
     self.KILL_MULT = 1.0
@@ -150,6 +150,12 @@ function AManager:StartIt(inst)
     end
 end
 
+function AManager:PrintVersion()
+    nolineprint("")
+    print(self.version)
+    nolineprint("")
+end
+
 function AManager:SetMods(data)
     self.mods = data
 end
@@ -159,6 +165,8 @@ function AManager:GetMods()
 end
 
 function AManager:Populate(data)
+
+    self:OnLoad(GetPlayer().components.asave:LoadSave())
 
     GLOBAL = data
 
@@ -180,14 +188,14 @@ function AManager:Merit()
         for x=1, value.amount, 1 do 
         
             count = count + (1/x)
-            if math.ceil(count*value.worth) == (2*value.worth) then
-                print("break", value.worth, count*value.worth)
+            if math.floor((count*value.worth)+0.5) == (2*value.worth) then
+                --print("break", value.worth, count*value.worth)
                 break
             end
         end
 
-        merit = merit + (math.ceil(count*value.worth)*self.KILL_MULT)
-        --print("merit of "..key..":", count*value.worth*self.KILL_MULT)
+        merit = merit + (math.floor((count*value.worth)+0.5)*self.KILL_MULT)
+        print("merit of "..key..":", count*value.worth*self.KILL_MULT)
     end
 
     for key,value in pairs(self.techLevel) do 
